@@ -62,9 +62,9 @@ export class Elm327Client {
     if (mode === "classic") {
       const classic = nativeClassic();
       if (!classic?.connectToDevice && !device?.connect) throw new Error("Bluetooth clásico requiere una compilación Android nativa");
-      this.device = device;
-      this.subscription = device.onDataReceived?.((event: any) => { this.response += event.data || ""; this.onData?.(event.data || ""); });
-      await device.connect({ uuid: SPP_UUID, delimiter: "\r" });
+      this.device = device?.connect ? device : await classic.connectToDevice(device.address || device.id, { uuid: SPP_UUID, delimiter: "\r" });
+      this.subscription = this.device.onDataReceived?.((event: any) => { this.response += event.data || ""; this.onData?.(event.data || ""); });
+      if (device?.connect) await this.device.connect({ uuid: SPP_UUID, delimiter: "\r" });
       this.onStatus?.("Inicializando ELM327…");
       await this.write("ATZ"); await this.delay(1200);
       await this.write("ATE0"); await this.delay(250);
