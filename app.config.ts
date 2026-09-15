@@ -71,6 +71,7 @@ const config: ExpoConfig = {
       "BLUETOOTH_SCAN",
       "BLUETOOTH_CONNECT",
       "ACCESS_FINE_LOCATION",
+      "ACCESS_COARSE_LOCATION",
       "FOREGROUND_SERVICE_CONNECTED_DEVICE",
       "USB_PERMISSION",
     ],

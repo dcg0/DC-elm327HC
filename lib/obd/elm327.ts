@@ -102,7 +102,7 @@ export class Elm327Client {
     const manager = new ble.BleManager();
     const found: any[] = [];
     return new Promise((resolve) => {
-      const timer = setTimeout(() => { manager.stopDeviceScan(); resolve(found); }, 7000);
+      const timer = setTimeout(() => { manager.stopDeviceScan(); resolve(found); }, 12000);
       manager.startDeviceScan(null, { allowDuplicates: false }, (error: any, device: any) => {
         if (!error && device?.id && !found.some((x) => x.id === device.id)) found.push({ ...device, mode: "ble" });
       });
