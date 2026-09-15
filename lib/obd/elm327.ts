@@ -42,10 +42,10 @@ export class Elm327Client {
     if (!classic?.getBondedDevices) return [];
     const enabled = await classic.isBluetoothEnabled();
     if (!enabled) await classic.requestBluetoothEnabled();
-    const bonded = await classic.getBondedDevices();
-    const discovered = classic.startDiscovery ? await classic.startDiscovery() : [];
+    const bonded = (await classic.getBondedDevices()).map((d: any) => Object.assign(d, { paired: true }));
+    const discovered = classic.startDiscovery ? (await classic.startDiscovery()).map((d: any) => Object.assign(d, { paired: false })) : [];
     const all = [...bonded, ...discovered].filter((d: any, index: number, list: any[]) => list.findIndex((x) => x.address === d.address) === index);
-    return all.map((d: any) => Object.assign(d, { mode: "classic", paired: Boolean(d.bonded) }));
+    return all.map((d: any) => Object.assign(d, { mode: "classic" }));
   }
 
   async pair(device: any): Promise<void> {
