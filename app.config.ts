@@ -64,7 +64,16 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
-    permissions: ["POST_NOTIFICATIONS"],
+    permissions: [
+      "POST_NOTIFICATIONS",
+      "BLUETOOTH",
+      "BLUETOOTH_ADMIN",
+      "BLUETOOTH_SCAN",
+      "BLUETOOTH_CONNECT",
+      "ACCESS_FINE_LOCATION",
+      "FOREGROUND_SERVICE_CONNECTED_DEVICE",
+      "USB_PERMISSION",
+    ],
     intentFilters: [
       {
         action: "VIEW",

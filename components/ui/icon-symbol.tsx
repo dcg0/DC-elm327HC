@@ -18,6 +18,10 @@ const MAPPING = {
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
+  "gauge": "speed",
+  "sensor": "sensors",
+  "exclamationmark.triangle": "warning",
+  "gearshape": "settings",
 } as IconMapping;
 
 /**
