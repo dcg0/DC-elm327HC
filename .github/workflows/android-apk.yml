@@ -9,7 +9,7 @@ jobs:
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      PATH: /usr/local/lib/android/sdk/cmdline-tools/16.0/bin:/usr/local/lib/android/sdk/platform-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      PATH: /usr/local/lib/android/sdk/platform-tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,8 +29,12 @@ jobs:
           java-version: '17'
       - name: Install Android components
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          SDKMANAGER=$(find "$ANDROID_HOME" -type f -name sdkmanager -perm -111 | head -n 1)
+          if [ -z "$SDKMANAGER" ]; then echo "sdkmanager not found under $ANDROID_HOME"; find /usr/local/lib/android /opt/android-sdk /opt/hostedtoolcache -type f -name sdkmanager 2>/dev/null | head -n 20; exit 1; fi
+          SDK_BIN=$(dirname "$SDKMANAGER")
+          echo "$SDK_BIN" >> "$GITHUB_PATH"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Generate native Android project
