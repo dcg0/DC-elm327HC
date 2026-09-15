@@ -1,20 +1,22 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { Elm327Client, type Dtc, type ObdReading } from "@/lib/obd/elm327";
 
-type ObdState = { status: string; connected: boolean; devices: any[]; readings: ObdReading[]; dtcs: Dtc[]; error: string; scan: () => Promise<void>; connect: (device: any) => Promise<void>; refresh: () => Promise<void>; loadDtcs: () => Promise<void>; clearDtcs: () => Promise<void>; sendCommand: (command: string) => Promise<string>; disconnect: () => Promise<void> };
+type ObdState = { status: string; connected: boolean; devices: any[]; readings: ObdReading[]; dtcs: Dtc[]; error: string; preferredPin: string; scan: () => Promise<void>; pair: (device: any, pin: string) => Promise<void>; connect: (device: any) => Promise<void>; refresh: () => Promise<void>; loadDtcs: () => Promise<void>; clearDtcs: () => Promise<void>; sendCommand: (command: string) => Promise<string>; disconnect: () => Promise<void> };
 const ObdContext = createContext<ObdState | null>(null);
 export function ObdProvider({ children }: { children: ReactNode }) {
   const client = useRef<Elm327Client | null>(null);
   const [status, setStatus] = useState("Listo para conectar"); const [devices, setDevices] = useState<any[]>([]); const [readings, setReadings] = useState<ObdReading[]>([]); const [dtcs, setDtcs] = useState<Dtc[]>([]); const [error, setError] = useState("");
+  const [preferredPin, setPreferredPin] = useState("0000");
   const connected = status === "Conectado" || status === "Conectado por BLE";
   useEffect(() => { client.current = new Elm327Client({ onStatus: setStatus }); void (async () => { setStatus("Buscando adaptadores…"); try { const classic = await client.current?.listDevices() || []; const ble = await client.current?.scanBle() || []; const found = [...classic, ...ble]; setDevices(found); if (found[0]) { try { await client.current?.connect(found[0], found[0].mode); } catch (e: any) { setError(e?.message || "Adaptador encontrado, pero no se pudo conectar"); setStatus("Adaptador encontrado"); } } else setStatus("No hay adaptadores emparejados"); } catch (e: any) { setError(e?.message || "No se pudo iniciar Bluetooth"); setStatus("Bluetooth no disponible"); } })(); return () => { void client.current?.disconnect(); }; }, []);
   const scan = useCallback(async () => { setError(""); try { const classic = await client.current?.listDevices() || []; const ble = await client.current?.scanBle() || []; setDevices([...classic, ...ble]); if (!classic.length && !ble.length) setStatus("No hay dispositivos emparejados"); } catch (e: any) { setError(e?.message || "No se pudo buscar dispositivos"); } }, []);
   const connect = useCallback(async (device: any) => { setError(""); try { await client.current?.connect(device, device.mode); } catch (e: any) { setError(e?.message || "No se pudo conectar"); setStatus("Error de conexión"); } }, []);
+  const pair = useCallback(async (device: any, pin: string) => { setError(""); setPreferredPin(pin); try { await client.current?.pair(device); await client.current?.connect({ ...device, paired: true }, "classic"); } catch (e: any) { setError(e?.message || "No se pudo emparejar"); } }, []);
   const refresh = useCallback(async () => { if (!connected) return; try { const next = await client.current?.readLive() || []; if (next.length) setReadings(next); } catch (e: any) { setError(e?.message || "Error leyendo sensores"); } }, [connected]);
   const loadDtcs = useCallback(async () => { if (!connected) return; try { setDtcs(await client.current?.readDtc() || []); } catch (e: any) { setError(e?.message || "Error leyendo códigos"); } }, [connected]);
   const clearDtcs = useCallback(async () => { if (!connected) return; try { await client.current?.clearDtc(); setDtcs([]); } catch (e: any) { setError(e?.message || "Error borrando códigos"); } }, [connected]);
   const sendCommand = useCallback(async (command: string) => { if (!connected) throw new Error("Conecta la ECU antes de enviar comandos"); return (await client.current?.sendCommand(command)) || "(sin respuesta)"; }, [connected]);
   useEffect(() => { if (!connected) return; const id = setInterval(refresh, 900); return () => clearInterval(id); }, [connected, refresh]);
-  return <ObdContext.Provider value={{ status, connected, devices, readings, dtcs, error, scan, connect, refresh, loadDtcs, clearDtcs, sendCommand, disconnect: async () => { await client.current?.disconnect(); } }}>{children}</ObdContext.Provider>;
+  return <ObdContext.Provider value={{ status, connected, devices, readings, dtcs, error, preferredPin, scan, pair, connect, refresh, loadDtcs, clearDtcs, sendCommand, disconnect: async () => { await client.current?.disconnect(); } }}>{children}</ObdContext.Provider>;
 }
 export function useElm327() { const value = useContext(ObdContext); if (!value) throw new Error("useElm327 debe usarse dentro de ObdProvider"); return value; }

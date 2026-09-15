@@ -42,7 +42,18 @@ export class Elm327Client {
     if (!classic?.getBondedDevices) return [];
     const enabled = await classic.isBluetoothEnabled();
     if (!enabled) await classic.requestBluetoothEnabled();
-    return (await classic.getBondedDevices()).map((d: any) => Object.assign(d, { mode: "classic" }));
+    const bonded = await classic.getBondedDevices();
+    const discovered = classic.startDiscovery ? await classic.startDiscovery() : [];
+    const all = [...bonded, ...discovered].filter((d: any, index: number, list: any[]) => list.findIndex((x) => x.address === d.address) === index);
+    return all.map((d: any) => Object.assign(d, { mode: "classic", paired: Boolean(d.bonded) }));
+  }
+
+  async pair(device: any): Promise<void> {
+    const classic = nativeClassic();
+    if (!classic?.pairDevice) throw new Error("El emparejamiento requiere una compilación Android nativa");
+    this.onStatus?.("Esperando confirmación de emparejamiento…");
+    await classic.pairDevice(device.address || device.id);
+    this.onStatus?.("Emparejado; conectando…");
   }
 
   async connect(device: any, mode: ConnectionMode = device?.mode || "classic"): Promise<void> {
@@ -50,7 +61,7 @@ export class Elm327Client {
     this.onStatus?.("Conectando…");
     if (mode === "classic") {
       const classic = nativeClassic();
-      if (!classic?.Bluetooth) throw new Error("Bluetooth clásico requiere una compilación Android nativa");
+      if (!classic?.connectToDevice && !device?.connect) throw new Error("Bluetooth clásico requiere una compilación Android nativa");
       this.device = device;
       this.subscription = device.onDataReceived?.((event: any) => { this.response += event.data || ""; this.onData?.(event.data || ""); });
       await device.connect({ uuid: SPP_UUID, delimiter: "\r" });
