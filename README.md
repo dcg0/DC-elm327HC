@@ -1,5 +1,7 @@
 # DC-ELM327
 
+![Logo DC-ELM327](assets/images/icon.png)
+
 [![Checks](https://github.com/dcg0/DC-elm327HC/actions/workflows/ci.yml/badge.svg)](https://github.com/dcg0/DC-elm327HC/actions/workflows/ci.yml)
 
 Aplicación Android profesional para diagnóstico OBD-II mediante adaptadores ELM327. Incluye conexión Bluetooth clásico SPP y BLE, tablero de sensores, terminal AT, lectura/borrado de DTC, reconexión automática y reporte PDF.
@@ -15,6 +17,8 @@ La vista previa web no puede acceder al Bluetooth físico. La detección y comun
 **APK:** todavía no hay una APK compilada publicada. No se incluye un enlace de descarga falso. Cuando se genere la primera versión, deberá publicarse como release en:
 
 **[Descargas APK / Releases](https://github.com/dcg0/DC-elm327HC/releases/latest)**
+
+Para generar una APK de revisión directamente en GitHub, abre **[Build Android APK](https://github.com/dcg0/DC-elm327HC/actions/workflows/android-apk.yml)**, pulsa **Run workflow** y descarga el artefacto `DC-ELM327-debuggable-review-apk` cuando termine.
 
 ## Funciones
 
