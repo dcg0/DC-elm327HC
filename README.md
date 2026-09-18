@@ -35,6 +35,7 @@ Para generar una APK de revisión directamente en GitHub, abre **[Build Android 
 - Lectura ampliada de DTC almacenados (`03`), pendientes (`07`), permanentes (`0A`) y freeze frame (`02`), con identificación VIN/ECU mediante Mode 09 y estado de monitores mediante `0101`.
 - Más telemetría OBD-II estándar: temperatura de aceite y ambiente, presión de combustible y barométrica, avance de encendido, EGR/EVAP, voltaje del módulo, tiempo de marcha y distancia desde MIL.
 - PDF profesional con lecturas, códigos y sello digital de sesión.
+- Base local DTC con referencias SAE J2012 y referencias OEM seleccionadas por marca/modelo/año, buscador y selector de vehículo. Los códigos no reconocidos se muestran sin inventar una descripción.
 
 ## Instalar y validar el código
 
