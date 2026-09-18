@@ -36,6 +36,7 @@ Para generar una APK de revisión directamente en GitHub, abre **[Build Android 
 - Más telemetría OBD-II estándar: temperatura de aceite y ambiente, presión de combustible y barométrica, avance de encendido, EGR/EVAP, voltaje del módulo, tiempo de marcha y distancia desde MIL.
 - PDF profesional con lecturas, códigos y sello digital de sesión.
 - Base local DTC con referencias SAE J2012 y referencias OEM seleccionadas por marca/modelo/año, buscador y selector de vehículo. Los códigos no reconocidos se muestran sin inventar una descripción.
+- Cada código catalogado incluye síntomas habituales, causas probables, pruebas recomendadas, pasos de reparación y advertencias de seguridad; son guías de referencia y deben contrastarse con el manual de servicio exacto.
 
 ## Instalar y validar el código
 
