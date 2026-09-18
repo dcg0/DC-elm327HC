@@ -20,7 +20,27 @@ La vista previa web no puede acceder al Bluetooth físico. La detección y comun
 
 Para generar una APK de revisión directamente en GitHub, abre **[Build Android APK](https://github.com/dcg0/DC-elm327HC/actions/workflows/android-apk.yml)**, pulsa **Run workflow** y descarga el artefacto `DC-ELM327-debuggable-review-apk` cuando termine.
 
-## Funciones
+##Descargar APK
+La versión de prueba más reciente está disponible en GitHub Releases . También puedes descargar directamente la depuración de APK desde DC-ELM327-debug.apk .
+
+Esta APK está firmada con la clave debug y es para pruebas. Para publicar una versión de producción o subirla a Google Play, genera y protege una clave propia.
+
+En Windows:
+
+gradlew.bat clean test assembleDebug
+local.propertieses local a cada equipo y no se debe subir al repositorio. Android Studio puede abrir directamente la carpeta raíz del proyecto.
+
+Instalar en un dispositivo conectado
+Con adbdisponible y la depuración USB habilitada:
+
+adb install -r androbd/build/outputs/apk/debug/androbd-debug.apk
+Para probar el modo Demo, abra la aplicación y seleccione el modo de demostración desde la pantalla inicial o las opciones de conexión. Para una conexión real, conceda los permisos solicitados y seleccione el medio Bluetooth, BLE, USB o rojo correspondiente.
+
+Integración continúa
+Las acciones de GitHub se ejecutan automáticamente testy assembleDebugen cada solicitud push y pull. También se puede iniciar manualmente desde la pestaña Acciones . El flujo de trabajo publica la APK de depuración como artefacto descargable.
+
+Licencia
+Consulta LICENCIA . El proyecto conserva la licencia y atribuciones de sus componentes originales.
 
 - Escaneo de Bluetooth clásico y BLE.
 - Permisos Android 12+ (`BLUETOOTH_SCAN` y `BLUETOOTH_CONNECT`) y permisos de ubicación para versiones anteriores.
