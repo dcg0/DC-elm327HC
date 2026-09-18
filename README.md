@@ -32,7 +32,8 @@ Para generar una APK de revisión directamente en GitHub, abre **[Build Android 
 - Handshake ELM327 con `ATZ`, `ATE0`, `ATL0`, `ATS0`, `ATH0`, `ATAT1` y `ATSP0`.
 - Cascada de protocolos OBD-II cuando la autodetección no confirma comunicación.
 - RPM, velocidad, temperatura, carga, acelerador, MAF y otros PIDs disponibles.
-- Lectura de DTC almacenados y pendientes, borrado mediante `04` y terminal AT.
+- Lectura ampliada de DTC almacenados (`03`), pendientes (`07`), permanentes (`0A`) y freeze frame (`02`), con identificación VIN/ECU mediante Mode 09 y estado de monitores mediante `0101`.
+- Más telemetría OBD-II estándar: temperatura de aceite y ambiente, presión de combustible y barométrica, avance de encendido, EGR/EVAP, voltaje del módulo, tiempo de marcha y distancia desde MIL.
 - PDF profesional con lecturas, códigos y sello digital de sesión.
 
 ## Instalar y validar el código

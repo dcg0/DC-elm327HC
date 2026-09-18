@@ -13,11 +13,14 @@ type ObdState = {
   protocol: string | null;
   adapterId: string;
   reconnecting: boolean;
+  vehicleInfo: { vin: string; calibrationId: string; ecuName: string } | null;
+  monitorStatus: string;
   scan: () => Promise<void>;
   pair: (device: any, pin: string) => Promise<void>;
   connect: (device: any) => Promise<void>;
   refresh: () => Promise<void>;
   loadDtcs: () => Promise<void>;
+  loadExtendedDiagnostics: () => Promise<void>;
   clearDtcs: () => Promise<void>;
   sendCommand: (command: string) => Promise<string>;
   disconnect: () => Promise<void>;
@@ -51,6 +54,8 @@ export function ObdProvider({ children }: { children: ReactNode }) {
   const [protocol, setProtocol] = useState<string | null>(null);
   const [adapterId, setAdapterId] = useState("");
   const [reconnecting, setReconnecting] = useState(false);
+  const [vehicleInfo, setVehicleInfo] = useState<{ vin: string; calibrationId: string; ecuName: string } | null>(null);
+  const [monitorStatus, setMonitorStatus] = useState("");
 
   const connected = status === "Conectado" || status === "Conectado por BLE";
 
@@ -153,8 +158,31 @@ export function ObdProvider({ children }: { children: ReactNode }) {
   const loadDtcs = useCallback(async () => {
     if (!connected) return;
     busyRef.current = true;
-    try { setDtcs(await client.current?.readDtc() || []); }
+    try {
+      const [stored, pending, permanent, freezeFrame] = await Promise.all([
+        client.current?.readDtc() || Promise.resolve([]),
+        client.current?.readPendingDtc() || Promise.resolve([]),
+        client.current?.readPermanentDtc() || Promise.resolve([]),
+        client.current?.readFreezeFrameDtc() || Promise.resolve([]),
+      ]);
+      const merged = [...stored, ...pending, ...permanent, ...freezeFrame];
+      setDtcs(merged.filter((item, index, list) => list.findIndex((other) => other.code === item.code && other.status === item.status) === index));
+    }
     catch (e: any) { setError(e?.message || "Error leyendo códigos"); }
+    finally { busyRef.current = false; }
+  }, [connected]);
+
+  const loadExtendedDiagnostics = useCallback(async () => {
+    if (!connected || busyRef.current) return;
+    busyRef.current = true;
+    try {
+      const [info, status] = await Promise.all([
+        client.current?.readVehicleInfo(),
+        client.current?.readMonitorStatus(),
+      ]);
+      if (info) setVehicleInfo(info);
+      if (status) setMonitorStatus(status);
+    } catch (e: any) { setError(e?.message || "La ECU no respondió al diagnóstico ampliado"); }
     finally { busyRef.current = false; }
   }, [connected]);
 
@@ -187,7 +215,7 @@ export function ObdProvider({ children }: { children: ReactNode }) {
 
   return (
     <ObdContext.Provider
-      value={{ status, connected, devices, readings, dtcs, error, preferredPin, protocol, adapterId, reconnecting, scan, pair, connect, refresh, loadDtcs, clearDtcs, sendCommand, disconnect }}
+      value={{ status, connected, devices, readings, dtcs, error, preferredPin, protocol, adapterId, reconnecting, vehicleInfo, monitorStatus, scan, pair, connect, refresh, loadDtcs, loadExtendedDiagnostics, clearDtcs, sendCommand, disconnect }}
     >
       {children}
     </ObdContext.Provider>

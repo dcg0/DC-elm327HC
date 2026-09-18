@@ -11,12 +11,24 @@ const PID_COMMANDS = [
   { name: "RPM", command: "010C", unit: "rpm" },
   { name: "Velocidad", command: "010D", unit: "km/h" },
   { name: "Temperatura", command: "0105", unit: "°C" },
+  { name: "Temperatura aceite", command: "015C", unit: "°C" },
+  { name: "Temperatura ambiente", command: "0146", unit: "°C" },
   { name: "Carga motor", command: "0104", unit: "%" },
   { name: "Acelerador", command: "0111", unit: "%" },
+  { name: "Acelerador relativo", command: "0145", unit: "%" },
+  { name: "Acelerador absoluto", command: "0147", unit: "%" },
   { name: "MAF", command: "0110", unit: "g/s" },
   { name: "Temp. admisión", command: "010F", unit: "°C" },
   { name: "Presión admisión", command: "010B", unit: "kPa" },
+  { name: "Presión combustible", command: "010A", unit: "kPa" },
+  { name: "Presión barométrica", command: "0133", unit: "kPa" },
+  { name: "Avance encendido", command: "010E", unit: "°" },
+  { name: "EGR comandada", command: "012C", unit: "%" },
+  { name: "Purgado EVAP", command: "012E", unit: "%" },
   { name: "Nivel combustible", command: "012F", unit: "%" },
+  { name: "Voltaje módulo", command: "0142", unit: "V" },
+  { name: "Tiempo motor encendido", command: "011F", unit: "s" },
+  { name: "Distancia desde MIL", command: "0121", unit: "km" },
 ];
 
 // Protocolos ELM327 (ATSPn) probados en cascada cuando la auto-detección (ATSP0) no logra hablar con la ECU.
@@ -306,6 +318,33 @@ export class Elm327Client {
     return this.decodeCodes(this.cleanResponse(raw), "pending");
   }
 
+  async readPermanentDtc(): Promise<Dtc[]> {
+    const raw = await this.rawTransact("0A", 2000, 1);
+    return this.decodeCodes(this.cleanResponse(raw), "permanent");
+  }
+
+  async readFreezeFrameDtc(): Promise<Dtc[]> {
+    const raw = await this.rawTransact("02", 2000, 1);
+    return this.decodeCodes(this.cleanResponse(raw), "stored");
+  }
+
+  async readMonitorStatus(): Promise<string> {
+    return this.cleanResponse(await this.rawTransact("0101", 2000, 1)) || "Sin respuesta";
+  }
+
+  async readVehicleInfo(): Promise<{ vin: string; calibrationId: string; ecuName: string }> {
+    const [vinRaw, calibrationRaw, ecuRaw] = await Promise.all([
+      this.rawTransact("0902", 3000, 1),
+      this.rawTransact("0904", 3000, 1),
+      this.rawTransact("090A", 3000, 1),
+    ]);
+    return {
+      vin: this.decodeAsciiResponse(vinRaw),
+      calibrationId: this.decodeAsciiResponse(calibrationRaw),
+      ecuName: this.decodeAsciiResponse(ecuRaw),
+    };
+  }
+
   async clearDtc(): Promise<string> {
     await this.rawTransact("04", 2000, 1);
     return "Comando de borrado enviado a la ECU";
@@ -414,11 +453,29 @@ export class Elm327Client {
     const b = parseInt(hex.slice(2, 4) || "00", 16);
     if (command === "010C") return Math.round(((a * 256 + b) / 4) * 10) / 10;
     if (command === "010D") return a;
-    if (command === "0105" || command === "010F") return a - 40;
+    if (["0105", "010F", "0146", "015C"].includes(command)) return a - 40;
     if (command === "0104" || command === "0111" || command === "012F") return Math.round((a * 100 / 255) * 10) / 10;
+    if (["0145", "0147"].includes(command)) return Math.round((a * 100 / 255) * 10) / 10;
     if (command === "0110") return Math.round(((a * 256 + b) / 100) * 10) / 10;
     if (command === "010B") return a;
+    if (command === "010A") return a * 3;
+    if (command === "0133") return a;
+    if (command === "010E") return Math.round((a / 2 - 64) * 10) / 10;
+    if (["012C", "012E"].includes(command)) return Math.round((a * 100 / 255) * 10) / 10;
+    if (command === "0142") return Math.round(((a * 256 + b) / 1000) * 100) / 100;
+    if (command === "011F" || command === "0121") return a * 256 + b;
     return null;
+  }
+
+  private decodeAsciiResponse(raw: string): string {
+    const hex = raw.toUpperCase().replace(/[^0-9A-F]/g, "");
+    const chars: string[] = [];
+    for (let i = 0; i + 1 < hex.length; i += 2) {
+      const code = parseInt(hex.slice(i, i + 2), 16);
+      if (code >= 32 && code <= 126) chars.push(String.fromCharCode(code));
+    }
+    const text = chars.join("").replace(/SEARCHING|NODATA|UNABLE/gi, "").trim();
+    return text || "Sin respuesta";
   }
 
   private decodeCodes(clean: string, status: Dtc["status"]): Dtc[] {
